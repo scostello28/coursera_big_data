@@ -1,4 +1,4 @@
-ApproachesFraction# Coursera_Intor_to_Big_Data
+FApproachesFraction# Coursera_Intor_to_Big_Data
 
 By the end of this course you will be able to...
 
@@ -202,7 +202,7 @@ Tools:
   - Key-value pair database
     - Cassandra
 
-Data Warehouses are central repositories of integrated data from one or more sources. The data that gets stored in warehouses, gets extracted from multiple sources. It gets transformed into a common structured form and it can slow that into the central database for use by workers creating analytical reports throughout an enterprise. Unfortunately, this is fairly static and does not fit well with today's dynamic big data world.
+Data Warehouses are central repositories of integrated data from one or more sources. The data that gets stored in warehouses, gets extracted from multiple sources. It gets transformed into a common structured form and it can flow that into the central database for use by workers creating analytical reports throughout an enterprise. Unfortunately, this is fairly static and does not fit well with today's dynamic big data world.
 
 Big data must pass through a series of steps before it generates value. Namely:
 1. data access,
@@ -772,24 +772,24 @@ A programming model is able to be written to work effectively on top of distribu
 
 Requirements for big data programming models
 1. Support Big Data operations
-  - Split volumes of data
-    - Partitioning and placement of data in and out of computer memory along with a model to synchronize the datasets later on.
-  - Access data fast
-  - Distribute computations to nodes
-    - Scheduling of many parallel tasks at once
+    - Split volumes of data
+      - Partitioning and placement of data in and out of computer memory along with a model to synchronize the datasets later on.
+    - Access data fast
+    - Distribute computations to nodes
+      - Scheduling of many parallel tasks at once
 2. Handle Fault Tolerance
-  - Replicate data partitions
-  - Recover files when needed
+    - Replicate data partitions
+    - Recover files when needed
 3. Enable Adding More Racks
-  - This is referred to as "scaling out"
+    - This is referred to as "scaling out"
 4. Optimized for specific data types
-  - Documents, tables, graphs, key-value pairs, multimedia, streams
+    - Documents, tables, graphs, key-value pairs, multimedia, streams
 
 MapReduce is a big data programming model that supports all the requirements of big data modeling.
-- It can model processing large data,
-- split complications into different parallel tasks and
-- make efficient use of large commodity clusters and distributed file systems.
-- In addition, it abstracts out the details of parallelization, full tolerance, data distribution, monitoring and load balancing.
+  - It can model processing large data,
+  - split complications into different parallel tasks and
+  - make efficient use of large commodity clusters and distributed file systems.
+  - In addition, it abstracts out the details of parallelization, full tolerance, data distribution, monitoring and load balancing.
 
 To summarize, programming models for big data are abstractions over distributed file systems. The desired programming models for big data should handle large volumes and varieties of data. Support full tolerance and provide scale out functionality. MapReduce is one of these models, implemented in a variety of frameworks including Hadoop.
 
