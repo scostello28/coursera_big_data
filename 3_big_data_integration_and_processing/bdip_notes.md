@@ -12,6 +12,11 @@ entity# Big_Data_Intgration_and_Processing
 - [Big_Data_Pipelines_and_High-level_Operations_for_Big_Data_Processing](#big_data_pipelines_and_high-level_operations_for_big_data_processing)
 - [Big_Data_Processing_Tools_and_Systems](#big_data_processing_tools_and_systems)
 - [Hands-On_Spark](#hands-on_spark)
+- [Programming_in_Spark](#programming_in_spark)
+- [Main_Modules_in_the_Spark_Ecosystem](#main_modules_in_the_spark_ecosystem)
+- [Hands_On_Spark_Data_Processing](#hands_on_spark_data_processing)
+- [Querying_and_Exporting_from_MongoDB](#querying_and_exporting_from_mongodb)
+- [Analysis_Using_Spark](#analysis_using_spark)
 
 ## Why_Big_Data_Integration_and_Processing
 
@@ -459,7 +464,7 @@ Just like a basic SQL query states, which parts of which records from one or mor
 
 **Array Operations**
 - Find items which are tagged as "popular" or "organic"
-  `db.inventory.find({tags:{$in:["popular", "organic"]}})``
+  `db.inventory.find({tags:{$in:["popular", "organic"]}})`
 - Find items which are *not* tagged as "popular" *nor* "organic"
   `db.inventory.find({tags:{$nin:["popular", "organic"]}})`
 - Find the 2nd and 3rd elements of tags
@@ -1426,21 +1431,397 @@ Finally, saveAsTextFile is an action that kickstarts the computation and writes 
 To summarize, in a typical Spark program we create *RDDs* from external storage or local collections like lists. Then we apply *transformations* to these RDDs, like *filter*, *map*, and *reduceByKey*. These transformations get lazily evaluated until an *action* is performed. Actions are performed both for local and parallel computation to generate results.
 
 ### Transformations
+
 [Slides](lecture_slides/transformations.pdf)
 
+Remember:
+
+- That RDDs are immutable.  So when each transformation is executed a new RDD is created resulting in a chain of RDDs along out pipeline.
+
+- Spark is lazy, meaning that transformations are not executed until an action is performed.  At that point Spark will figure out the most efficient way to execute this computation then start all the tasks in the worker nodes.
+
+Summary:
+
+- Explain the difference between a narrow transformation and a wide transformation.
+- Describe map, flatmap, filter and coalesce as narrow transformations.
+- List two wide transformations.
+
+
+**Map**
+
+- Applies a function to each element of RDD
+
+```python
+def lower(line):
+  return line.lower()
+
+lower_text_RDD  =  text_RDD.map(lower)
+```
+
+**flatMap**
+
+- Maps then flattens output
+- Like Map but instead of returning an individual element for each map, it returns an RDD with an aggregate of all the results for all the elements.
+- Ex below results in a 1D list of words
+
+```python
+def split_words(line):
+  return line.split(0
+
+words_RDD = text_RDD.flatMap(split_words)
+
+words_RDD.collect()
+```
+
+**Narrow transformations**
+
+In Spark terms, map, flatMap and filter are narrow transformations.  Narrow transformation refers to the processing where the processing logic depends only on data that is already residing in the partition and **data shuffling is not necessary**.
+
+**filter**
+
+- Keeps only the elements where a function is true
+
+Example filters for words that start with the letter a:
+
+```python
+def starts_with_a(word):
+  return word.lower(0.startswith(“a”)
+
+words_RDD.filter(starts_with_a_.collect()
+```
+
+**coalesce**
+
+- Reduce the number of partitions
+- If the amount of data inside each partition is reduced we can reduce the number of partitions to improve performance.
+
+**Wide Transformations**
+
+In groupByKey and reduceByKey transformations, we observe the behavior that **require shuffling** of the data across work nodes, we call such transformations wide transformations.
+
+**groupByKey**
+
+- GroupByKey is the transformation that helps us combine values with the same key into a list without applying a special user define function to it.
+
+**reduceByKey**
+
+- If we need to apply such functions to a group of values related to a key like this, we use the reduceByKey operation.
+
+- ReduceByKey helps us to combine the value using a reduce function.
+
+As a summary, we have listed a small number of transformations in Spark with some examples and distinguished between them as narrow and wide transformations. Although this is a good start, I advise you to go through the list provided at the link ([here](https://spark.apache.org/docs/1.2.0/programming-guide.html#transformations)) after you complete this beginner course. Read about the rest of the transformations in Spark before you start programming in Spark and have fun with transformations.
 
 
 ### Actions
 [Slides](lecture_slides/actions.pdf)
 
+We have learned that **transformations** are **evaluated** **after** an **action** is performed.
+
+**Actions** - The Last step in a Spark pipeline.  RDD operations that trigger the evaluation of the transformation pipeline, returning the final result to the driver program or save to persistent storage.
+
+**Summary**
+- Explain the steps of a Spark pipeline ending with a collect action.
+- List four common action operations in Spark.
+
+**Collect**
+Imagine that initially we are reading from HDFS. The RDD partitions that go
+through the transformation steps in our big data pipeline. When the final
+step is done, the *collect* action is called and Spark sends all the tasks
+for execution to the worker notes.
+
+**Some Common Actions**
+| Action                     | Usage                                                              |
+|----------------------------|--------------------------------------------------------------------|
+| `collect()`                | Copy all elements to the driver                                    |
+| `take(n)`                  | Copy first n elements                                              |
+| `reduce(func)`             | Aggregate elements with func (takes 2 elements, returns 1)         |
+| `saveAsTextFile(filename)` | Save to local file of HDFS (useful if output too large for memory) |
+
 ## Main_Modules_in_the_Spark_Ecosystem
 
 ### Spark_SQL
+[Lecture Slides](lecture_slides/spark_sql.pdf)
+
+**Summary**
+- Process structured data using Spark's SQL module.
+- Explain the numerous benefits of Spark SQL.
+
+- The Component of Spark that allows querying of structured and unstructured data
+through Spark.
+- Provides a common query language
+- Has API's for Scala, Java and Python to convert results into RDD's.
+
+**Relation Operations**
+- Allows deployment of SQL queries on Spark.
+
+**Business Intelligence Tools**
+- Spark SQL connects to all BI tools that support JDBC or ODBC standard.
+
+**DataFrames**
+- Spark SQL also provides APIs to convert the query data into DataFrames to hold distributed data.
+
+**How to run SQL in Spark**
+1. Create a SQLContext
+```python
+from pyspark.sql import SQLContext
+sqlContext = sqlContext(sc)
+```
+
+Leverage context to create a DataFrame from am existing RDD, a Hive table
+or other data sources.
+  - A file can be read in and converted to a Dataframe with one command.
+```Python
+# Read
+df = sqlContext.read.json(filename.json")
+
+# Display
+df.show()
+```
+RDDs can also be converted to DataFrames but takes a little more work.
+```Python
+# readfrom pyspark.sql import SQLContext, row
+sqlContext = SQLcontext(sc)
+
+# Load a text file and canvert each line to a row
+lines = sc.textFile("filename.txt")
+cols = lines.map(lambda l: l.split(","))
+data = cols.map(lambda p: Row(name=p[0], zip=int(p[1])))
+
+# Create DataFrames
+df = sqlContext.createDataFrame(data)
+
+# Register the DataFrame as a table
+df.registerTempTable("table")
+
+# Run SQL
+Output = sqlContext.sql("SELECT * FROM table WHERE ...")
+```
+Once your data is in a DataFrame, you can perform all sorts of transformation
+operations on it.
+
+```Python
+# Show the content of the DataFrame
+df.show()
+
+# Print the schema
+df.PrintSchema()
+
+# Select only the "X" column
+df.select("X").show()
+
+# Select everybody, but increment the discount by 5%
+df.select(df["name"], df["discount"] + 5).show()
+
+# Select people height greater than 4 ft
+df.filter(df["height"] > 4.0).show()
+
+# Count people by zip
+df,groupby("zip").count().show()
+```
+
+To summarize, Spark SQL lets you run relational queries on Spark. It also
+lets you connect to a variety of databases, and deploy business intelligence
+tools over Spark.
 
 ### Spark_Streaming
+[Lecture Slides](lecture_slides/spark_streaming.pdf)
+
+Spark streaming provides scalable processing for real-time data and runs on top of Spark Core. Continuous data streams are converted or grouped into discrete RDDs which can then be processed in parallel.
+
+**Summary**
+- Summarize how Spark read streaming data
+- List several sources of streaming data supported by Spark
+- Describe Spark's sliding windows
+
+**Spark Streaming**
+- Scalable processing for real-time analytics
+- Data streams converted to discrete RDDs
+- Has APIs for Scala, Java and Python
+
+**Spark Streaming Sources**
+- Kafka - A high throughput published subscribed messaging system
+- Flume - Collects and aggregates log data
+- HDFS - Batch Streaming
+- S3 - Batch Streaming
+- Many non-SQL databases - Batch Streaming
+- Twitter - Real-time data provider
+- Socket - Real-time data provider
+- ...etc.
+
+**Creating and Processing DStream**
+Spark streaming reads streaming data and converts it into micro batches which we call **DStreams** which is short for discretized stream.
+
+![Spark Streaming Transformation Flow](images/spark_streaming_transformation_flow.png)
+
+**Main Take-Aways**
+- Spark uses DStreams to make discrete RDDs from streaming data.
+  - Same transformations and calculations applied to batch RDDs can be applied.
+- DStreams can create a sliding window to perform calculations on a window of time.
 
 ### Spark_MLLib
+[Lecture Slides](lecture_slides/spark_mllib.pdf)
+
+- Scalable machine learning library that runs on Spark Core
+- Provides distributed implementations of common machine learning algorithms and utilities
+- Has APIs for Scala, Java, Python and R.
+
+**Objectives**
+- Describe what MLLib is
+- List main categories of techniques available in MLLib.
+- Explain code segments containing MLLib algorithms.
+
+**MLlib Algorithms and Techniques**
+- Machine Learning
+  - Many algorithms to build models for Classification, regression, clustering, etc.
+  - Evaluation metrics - ex. ROC curve
+- Statistics
+  - Summary statistics, sampling, etc.
+- Utilities
+  - Dimensionality reduction, transformation, etc.
+
+**MLlib Example - Summary Statistics**
+- Compute column summary statistics
+```python
+from pyspark.mllib.stat import Statistics
+
+# Data as RDD of Vectors
+dataMatrix = sc.parallelize([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]])
+
+# Compute column summery statistics
+summary = Statistics.colStats(dataMatrix)
+print(summary.mean())
+print(summary.variance())
+print(summary.numNonzeros())
+```
+
+**MLlib Example - Classification**
+- Build a decision tree model for classification
+
+```python
+from pyspark.mllib.tree import DecisionTree, DecisionTreeModel
+from pyspark.mllib.util import MLUtils
+
+# Read and parse data
+data = sc.textFile("data.txt")
+
+# Decision tree for classification
+model = DecisionTree.treainClassifier(parsedData, numClasses=2)
+print(model.toDebugString())
+model.save(sc, "decisionTreeModel")
+```
+
+**MLlib Example - Clustering**
+- Build k-means model for clustering
+```python
+from pyspark.mllib.clustering import KMeans, KMeansModel
+form numpy import array
+
+# Read and parse data
+data = sc.textFile("data.txt")
+parseddata = data.map(lambda line: array([float(x) for x in line.split(' ')]))
+
+# k-means model for clustering
+clusters = KMeans.train(parsedData, k=3)
+print(clusters.centers)
+```
+
+**Main Take-Aways**
+- MLlib is Spark's machine learning library,
+  - Distributed implementations
+- Main categories of algorithms and techniques:
+  - Machine learning
+  - Statistics
+  - Utility for ML pipeline
 
 ### Spark_GraphX
+[Lecture Slides](lecture_slides/spark_graphx.pdf)
+
+**Objectives**
+- Describe what GraphX is
+- Explain how vertices and edges are stored.
+- Describe hoe Pregel works at a high level
+
+**GraphX**
+- is Apache Spark's API for graphs and graph-parallel computation.
+- Uses a property graph model.
+  - This means that both Nodes and edges in a graph can have attributes and values.
+  - Node properties are stored in a Vertex Table.
+  - Edge properties are stored in an Edge Table.
+  - The connectivity information, which edge connects which nodes, is stored separately from the node and edge properties.
+
+**Special RDDs for GraphX**:
+
+**VertexRDD** - represents a set of vertices
+**EdgeRDD** - stores edge data in columnar format
+- The Edge Class has a source vertex, destination vertex and an edge attribute.
+
+**Triplet View**
+The triplet view logically joins vortex and edge properties.
+
+**Pregel Library (API)**
+- GraphX has an operator that can execute operations from the Pregel library for graph analytics.
+T- his Pregel operator executes in a series of super steps which defines a messaging protocol for vertices.
+
+In summary, Spark can be used for graph parallel computations. GraphX uses special RDDs for storing vertex and edge information. And the pregel operator works in a series of super steps.
 
 ## Hands_On_Spark_Data_Processing
+
+### Exploring_SparkSQL_and_Spark_DataFrames
+[Reading](lecture_slides/Exploring_SparkSQL_and_Spark_DataFrames.pdf)
+
+### Instructions_for_Configuring_VirtualBox_for_Spark_Streaming
+[Reading](lecture_slides/Instructions_for_Configuring_VirtualBox_for_Spark_Streaming.pdf)
+
+### Analyzing_Sensor_Data_with_Spark_Streaming
+[Reading](lecture_slides/Analyzing_Sensor_Data_with_Spark_Streaming.pdf)
+
+## Querying_and_Exporting_from_MongoDB
+
+This week we have a case study for you to exercise what you learned so far.
+
+The Soccer World Cup is here! A lot of fans are tweeting their opinions about the games, their favorite players and teams of their countries.
+
+Imagine that you are a "Sports Analyst" and you are trying to understand the behavior of fans across the globe. You turn to Twitter as a platform that you can access to the fans.
+
+We give you a dataset that you are already familiar with from the hands-on for MongoDB. You will have two assignments involving analytics on this dataset.
+
+[ The data set for this exercise may be obtained in the lesson on 'Querying Documents in MondoDB' at https://www.coursera.org/learn/big-data-integration-processing/supplement/R93cO/querying-documents-in-mongodb ]
+
+Query 1: How many tweets have location not null?
+```
+db.users.count({"user.Location": {$ne: null}})
+>>> 6937
+```
+
+Query 2: How many people have more followers than friends?
+```
+db.users.find({where: "this.user.FollowersCount > this.user.FriendsCount"}).count()
+>>> 5809
+```
+Query 3: Return text of tweets which have the string "http://" ?
+```
+db.users.find({tweet_text: /http:/}, {tweet_text: 1)
+
+or
+
+db.users.find({tweet_text: {$regex: /http:/i }}, {tweet_text: 1)
+
+>>> too long
+
+```
+Query 4: Return all the tweets which contain text "England" but not "UEFA" ?
+```
+db.users.find( {$and: [ {tweet_text: /England/}, {tweet_text: {$not: /UEFA/ } }]})
+
+>>> too long
+```
+Query 5: Get all the tweets from the location "Ireland" and contains the string "UEFA"?
+```
+db.users.find( {$and: [ {"user.Location": "Ireland"}, {tweet_text: /UEFA/ }]})
+```
+
+### Exporting_Data_from_MongoDB_to_a_CSV
+[Reading](lecture_slides/Exporting_Data_from_MongoDB_to_a_CSV.pdf)
+
+## Analysis_Using_Spark
+[Reading](lecture_slides/Analyzing_Tweets_About_Countries.pdf)
